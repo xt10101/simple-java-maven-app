@@ -9,29 +9,27 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                script {
-                    sh '''
-                        docker run --rm \
-                          -v $PWD:/app \
-                          -w /app \
-                          maven:3.9.6-eclipse-temurin-17 \
-                          mvn -B -DskipTests clean package
-                    '''
-                }
+                sh '''
+                    docker run --rm \
+                      -u $(id -u):$(id -g) \
+                      -v $PWD:/app \
+                      -w /app \
+                      maven:3.9.6-eclipse-temurin-17 \
+                      mvn -B -DskipTests clean package
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    sh '''
-                        docker run --rm \
-                          -v $PWD:/app \
-                          -w /app \
-                          maven:3.9.6-eclipse-temurin-17 \
-                          mvn test
-                    '''
-                }
+                sh '''
+                    docker run --rm \
+                      -u $(id -u):$(id -g) \
+                      -v $PWD:/app \
+                      -w /app \
+                      maven:3.9.6-eclipse-temurin-17 \
+                      mvn test
+                '''
             }
             post {
                 always {
