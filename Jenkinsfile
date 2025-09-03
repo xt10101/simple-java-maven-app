@@ -1,31 +1,37 @@
 pipeline {
     agent any
+
     environment {
+        // Point Jenkins pipelines to Docker-in-Docker service
         DOCKER_HOST = "tcp://docker:2375"
     }
+
     stages {
-        stage('Debug Files') {
-            steps {
-                sh """
-                    echo "Workspace: ${env.WORKSPACE}"
-                
-                """
-            }
-        }
         stage('Build') {
             steps {
-                sh """
-                docker run --rm \
-                -u 1000:1000 \
-                -v ${env.WORKSPACE}:/app -w /app \
-                maven:3.9.6-eclipse-temurin-17 mvn clean package
-                """
+                script {
+                    sh '''
+                        docker run --rm \
+                          -v $PWD:/app \
+                          -w /app \
+                          maven:3.9.6-eclipse-temurin-17 \
+                          mvn -B -DskipTests clean package
+                    '''
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh "docker run --rm -v ${env.WORKSPACE}:/app -w /app maven:3.9.6-eclipse-temurin-17 mvn test"
+                script {
+                    sh '''
+                        docker run --rm \
+                          -v $PWD:/app \
+                          -w /app \
+                          maven:3.9.6-eclipse-temurin-17 \
+                          mvn test
+                    '''
+                }
             }
             post {
                 always {
@@ -33,14 +39,16 @@ pipeline {
                 }
             }
         }
+
         stage('Deliver') {
             steps {
                 sh './jenkins/scripts/deliver.sh'
             }
         }
+
         stage('Complete') {
             steps {
-                echo 'Job Complete!'
+                echo '✅ Pipeline complete!'
             }
         }
     }
